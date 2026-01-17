@@ -34,11 +34,16 @@ class MainActivity : AppCompatActivity() {
         // Session Check
         val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         val userId = sharedPref.getString("user_id", null)
-        if (userId == null) {
+        val token = sharedPref.getString("jwt_token", null)
+
+        if (userId == null || token == null) {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
         }
+        
+        // Initialize Token
+        NetworkClient.authToken = token
 
         setContentView(R.layout.activity_main)
 
@@ -61,6 +66,7 @@ class MainActivity : AppCompatActivity() {
     }
     
     fun logout() {
+        NetworkClient.authToken = null // Clear memory token
          val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
             clear()
@@ -78,6 +84,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 // Fetch Users for current user info & spinner list
                 val users = NetworkClient.api.getUsers()
+                allUsers = users // Update class property for name resolution
                 currentUser = users.find { it.id == currentUserId }
                 
                 currentUser?.let {
@@ -273,10 +280,10 @@ class MainActivity : AppCompatActivity() {
                     amount = amount
                 )
                 NetworkClient.api.sendPoints(req)
-                Toast.makeText(this@MainActivity, "Sent!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "送りました！", Toast.LENGTH_SHORT).show()
                 fetchData() // Refresh
             } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "送信失敗: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

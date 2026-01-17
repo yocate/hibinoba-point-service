@@ -85,7 +85,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="もらったポイント"
+                    android:text="もらった"
                     android:textSize="12sp"
                     android:textColor="@color/text_grey"/>
                 <TextView
@@ -109,7 +109,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="あげたポイント"
+                    android:text="あげた"
                     android:textSize="12sp"
                     android:textColor="@color/text_grey"/>
                 <TextView
@@ -158,7 +158,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="さいきんの履歴"
+            android:text="最近の履歴"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/text_dark"

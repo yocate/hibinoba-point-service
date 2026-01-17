@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { User } from '../types';
 import { api } from '../lib/api';
 
@@ -29,21 +29,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const login = async (email: string, password: string) => {
-        const res = await api.post<User>('/login', { email, password });
-        const loggedInUser = res.data;
+        // Response is now { token: string, user: User }
+        const res = await api.post<{ token: string, user: User }>('/login', { email, password });
+        const { token, user: loggedInUser } = res.data;
 
         if (loggedInUser.role !== 'admin') {
-            // Optional: For strict admin panel, deny non-admins
-            // throw new Error("Access denied: Admins only");
+            // Optional: for strict admin checking
+            // throw new Error("Access denied");
         }
 
         setUser(loggedInUser);
         localStorage.setItem('user', JSON.stringify(loggedInUser));
+        localStorage.setItem('token', token);
     };
 
     const logout = () => {
         setUser(null);
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
     };
 
     return (

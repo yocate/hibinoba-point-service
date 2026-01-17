@@ -39,28 +39,41 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun login(email: String) {
+        val etPassword = findViewById<TextInputEditText>(R.id.etPassword)
+        val password = etPassword.text.toString()
+
+        if (password.isEmpty()) {
+            Toast.makeText(this, "Please enter password", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         lifecycleScope.launch {
             try {
-                // For MVP, we fetch all users and filter by email locally
-                // In prod, use a real login endpoint
-                val users = NetworkClient.api.getUsers()
-                val user = users.find { it.email.equals(email, ignoreCase = true) }
+                val response = NetworkClient.api.login(LoginRequest(email, password))
+                if (response.isSuccessful && response.body() != null) {
+                    val loginResponse = response.body()!!
+                    val user = loginResponse.user
+                    val token = loginResponse.token
 
-                if (user != null) {
                     // Save session
                     val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
                     with(sharedPref.edit()) {
                         putString("user_id", user.id)
                         putString("user_name", user.name)
+                        putString("jwt_token", token)
                         apply()
                     }
+                    
+                    // Set global token
+                    NetworkClient.authToken = token
+
                     startMainActivity()
                 } else {
-                    Toast.makeText(this@LoginActivity, "User not found", Toast.LENGTH_SHORT).show()
+                     Toast.makeText(this@LoginActivity, "Login failed: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Toast.makeText(this@LoginActivity, "Login failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@LoginActivity, "Login error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

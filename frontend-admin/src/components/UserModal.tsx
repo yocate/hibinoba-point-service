@@ -15,6 +15,7 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
         email: '',
         role: 'user',
         password: '',
+        is_active: true,
     });
     const [loading, setLoading] = useState(false);
 
@@ -25,6 +26,7 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
                 email: user.email,
                 role: user.role,
                 password: '', // Don't fill password
+                is_active: user.is_active,
             });
         } else {
             setFormData({
@@ -32,6 +34,7 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
                 email: '',
                 role: 'user',
                 password: '',
+                is_active: true,
             });
         }
     }, [user, isOpen]);
@@ -96,6 +99,22 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
                             <option value="admin">Admin</option>
                         </select>
                     </div>
+
+                    {user && (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="isActive"
+                                checked={formData.is_active}
+                                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                            />
+                            <label htmlFor="isActive" className="text-sm font-medium text-slate-700 select-none">
+                                Active Account
+                            </label>
+                        </div>
+                    )}
+
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                             Password {user && <span className="text-slate-500 font-normal">(Leave blank to keep current)</span>}

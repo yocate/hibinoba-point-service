@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
+	"internal-point-system/backend/auth"
 	"internal-point-system/backend/db"
 	"internal-point-system/backend/models"
 
@@ -14,14 +15,13 @@ import (
 
 // Helper to get transaction history
 func GetTransactions(c *gin.Context) {
-	// For MVP, get all transactions for current user?
-	// But we don't have auth middleware yet.
-	// Let's accept user_id as query param for MVP verification or header.
-	userIDStr := c.Query("user_id")
-	if userIDStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id required"})
+	// Get userID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	userIDStr := userID.(string)
 
 	rows, err := db.DB.Query(`
 		SELECT id, sender_id, receiver_id, amount, type, created_at 
@@ -56,8 +56,15 @@ func GetTransactions(c *gin.Context) {
 
 // Issue points (Admin)
 func IssuePoints(c *gin.Context) {
+	// Check Admin Role
+	role, exists := c.Get("role")
+	if !exists || role.(string) != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
+	senderID, _ := c.Get("userID") // Admin's ID
+
 	var req struct {
-		SenderID   string `json:"sender_id"` // Optional: Admin ID
 		ReceiverID string `json:"receiver_id"`
 		Amount     int    `json:"amount"`
 	}
@@ -90,14 +97,20 @@ func IssuePoints(c *gin.Context) {
 	}
 
 	// Create Transaction
-	// If sender_id is provided, use it. Otherwise null.
+	// Use Admin's ID as sender
 	var errTx error
-	if req.SenderID != "" {
+	adminIDStr := senderID.(string)
+
+	// Check if adminIDStr is valid, otherwise null (System)
+	// Actually we want to attribute to admin.
+
+	if adminIDStr != "" {
 		_, errTx = tx.Exec(`
 			INSERT INTO transactions (sender_id, receiver_id, amount, type)
 			VALUES ($1, $2, $3, 'issue')
-		`, req.SenderID, req.ReceiverID, req.Amount)
+		`, adminIDStr, req.ReceiverID, req.Amount)
 	} else {
+		// Fallback to system
 		_, errTx = tx.Exec(`
 			INSERT INTO transactions (receiver_id, amount, type)
 			VALUES ($1, $2, 'issue')
@@ -116,8 +129,15 @@ func IssuePoints(c *gin.Context) {
 
 // Transfer points (User)
 func TransferPoints(c *gin.Context) {
+	// Get sender from token
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	senderID := userID.(string)
+
 	var req struct {
-		SenderID   string `json:"sender_id"` // In real app, from Auth context
 		ReceiverID string `json:"receiver_id"`
 		Amount     int    `json:"amount"`
 	}
@@ -131,7 +151,7 @@ func TransferPoints(c *gin.Context) {
 		return
 	}
 
-	if req.SenderID == req.ReceiverID {
+	if senderID == req.ReceiverID {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot transfer to self"})
 		return
 	}
@@ -144,7 +164,7 @@ func TransferPoints(c *gin.Context) {
 
 	// Check Balance
 	var balance int64
-	err = tx.QueryRow("SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE", req.SenderID).Scan(&balance)
+	err = tx.QueryRow("SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE", senderID).Scan(&balance)
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Sender wallet not found"})
@@ -157,7 +177,7 @@ func TransferPoints(c *gin.Context) {
 	}
 
 	// Deduct
-	_, err = tx.Exec("UPDATE wallets SET balance = balance - $1 WHERE user_id = $2", req.Amount, req.SenderID)
+	_, err = tx.Exec("UPDATE wallets SET balance = balance - $1 WHERE user_id = $2", req.Amount, senderID)
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to deduct funds"})
@@ -179,7 +199,7 @@ func TransferPoints(c *gin.Context) {
 	_, err = tx.Exec(`
 		INSERT INTO transactions (sender_id, receiver_id, amount, type)
 		VALUES ($1, $2, $3, 'transfer')
-	`, req.SenderID, req.ReceiverID, req.Amount)
+	`, senderID, req.ReceiverID, req.Amount)
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to log transaction"})
@@ -274,8 +294,9 @@ func UpdateUser(c *gin.Context) {
 	var req struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
-		Role     string `json:"role"`     // Added Role
-		Password string `json:"password"` // Optional
+		Role     string `json:"role"`
+		Password string `json:"password"`
+		IsActive bool   `json:"is_active"` // Added
 	}
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -293,22 +314,21 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// Build Update Query
-	// Simple approach: Update everything provided.
-	// For password, only update if not empty.
-
 	if req.Password != "" {
 		hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 			return
 		}
-		_, err = db.DB.Exec("UPDATE users SET name=$1, email=$2, role=$3, password_hash=$4 WHERE id=$5", req.Name, req.Email, req.Role, string(hashed), id)
+		_, err = db.DB.Exec("UPDATE users SET name=$1, email=$2, role=$3, password_hash=$4, is_active=$5 WHERE id=$6",
+			req.Name, req.Email, req.Role, string(hashed), req.IsActive, id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 	} else {
-		_, err := db.DB.Exec("UPDATE users SET name=$1, email=$2, role=$3 WHERE id=$4", req.Name, req.Email, req.Role, id)
+		_, err := db.DB.Exec("UPDATE users SET name=$1, email=$2, role=$3, is_active=$4 WHERE id=$5",
+			req.Name, req.Email, req.Role, req.IsActive, id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -366,7 +386,15 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// For MVP, just return user info.
-	// In production, issue JWT here.
-	c.JSON(http.StatusOK, user)
+	// Generate JWT
+	token, err := auth.GenerateToken(user.ID.String(), user.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token": token,
+		"user":  user,
+	})
 }

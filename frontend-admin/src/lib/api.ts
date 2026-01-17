@@ -7,10 +7,15 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 const customFetch = async <T>(endpoint: string, options: RequestInit = {}): Promise<{ data: T }> => {
     const url = `${BASE_URL}${endpoint}`;
-    const headers = {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...options.headers as Record<string, string>,
     };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
 
     const response = await fetch(url, {
         ...options,
