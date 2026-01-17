@@ -1,0 +1,32 @@
+# Android
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+
+# Backend
+backend/tmp/
+backend/.air.toml
+# Keep .air.toml if it's config, but usually binaries like 'tmp' should be ignored. 
+# The user might want .air.toml if it's config. I'll keep it but ignore binary output.
+backend/main
+backend/backend
+
+# Frontend
+node_modules/
+frontend-admin/dist/
+frontend-admin/.env
+frontend-admin/.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+db/data/
+
+# OS
+.DS_Store
+Thumbs.db
