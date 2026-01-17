@@ -56,94 +56,107 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-slate-900">
-                        {user ? 'Edit User' : 'New User'}
-                    </h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-                        <X size={24} />
-                    </button>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl relative">
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-lg transition-colors"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
+                <h2 className="text-xl font-bold text-stone-900 mb-6">
+                    {user ? 'Edit User' : 'New User'}
+                </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">
+                            Name
+                        </label>
                         <input
-                            required
                             type="text"
+                            required
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-4 py-2 bg-stone-50 border-none rounded-lg focus:ring-2 focus:ring-orange-500/20 text-stone-900"
+                            placeholder="John Doe"
                         />
                     </div>
+
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">
+                            Email
+                        </label>
                         <input
-                            required
                             type="email"
+                            required
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-4 py-2 bg-stone-50 border-none rounded-lg focus:ring-2 focus:ring-orange-500/20 text-stone-900"
+                            placeholder="john@example.com"
                         />
                     </div>
+
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-1">
+                            Role
+                        </label>
                         <select
                             value={formData.role}
                             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                            className="w-full px-4 py-2 bg-stone-50 border-none rounded-lg focus:ring-2 focus:ring-orange-500/20 text-stone-900"
                         >
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
                         </select>
                     </div>
 
-                    {user && (
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                id="isActive"
-                                checked={formData.is_active}
-                                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                            />
-                            <label htmlFor="isActive" className="text-sm font-medium text-slate-700 select-none">
-                                Active Account
+                    {!user && (
+                        <div>
+                            <label className="block text-sm font-medium text-stone-700 mb-1">
+                                Password
                             </label>
+                            <input
+                                type="password"
+                                required
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                className="w-full px-4 py-2 bg-stone-50 border-none rounded-lg focus:ring-2 focus:ring-orange-500/20 text-stone-900"
+                                placeholder="••••••••"
+                            />
                         </div>
                     )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Password {user && <span className="text-slate-500 font-normal">(Leave blank to keep current)</span>}
-                        </label>
-                        <input
-                            type="password"
-                            required={!user} // Required only for new users
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            placeholder={user ? "••••••••" : ""}
-                        />
+                    {/* Active Toggle */}
+                    <div className="flex items-center justify-between py-2">
+                        <span className="text-sm font-medium text-stone-700">Active Account</span>
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${formData.is_active ? 'bg-orange-600' : 'bg-stone-200'
+                                }`}
+                        >
+                            <span
+                                className={`${formData.is_active ? 'translate-x-6' : 'translate-x-1'
+                                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                            />
+                        </button>
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-4">
+                    <div className="pt-4 flex gap-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg"
+                            className="flex-1 px-4 py-2 text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl font-medium transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                            className="flex-1 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl font-medium transition-colors"
                         >
-                            <Save size={18} />
-                            {loading ? 'Saving...' : 'Save User'}
+                            {user ? 'Save Changes' : 'Create User'}
                         </button>
                     </div>
                 </form>

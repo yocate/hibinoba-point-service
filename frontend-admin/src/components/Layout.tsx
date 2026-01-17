@@ -1,63 +1,43 @@
 import React from 'react';
-import { LayoutDashboard, Users, LogOut, Coins } from 'lucide-react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { LogOut, Coins } from 'lucide-react';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
-    const location = useLocation();
     const { logout } = useAuth();
 
-    const navItems = [
-        { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
-        { label: 'Users', icon: Users, path: '/users' },
-    ];
-
     return (
-        <div className="min-h-screen bg-slate-50 flex">
-            {/* Sidebar */}
-            <aside className="w-64 bg-slate-900 text-white flex flex-col fixed h-full transition-all duration-300">
-                <div className="p-6 flex items-center gap-3 border-b border-slate-700">
-                    <div className="bg-indigo-500 p-2 rounded-lg">
-                        <Coins size={24} className="text-white" />
-                    </div>
-                    <span className="font-bold text-lg tracking-tight">Point System</span>
-                </div>
+        <div className="min-h-screen bg-stone-50">
+            {/* Top Navigation Header */}
+            <header className="bg-stone-900 border-b border-stone-800 text-white shadow-sm sticky top-0 z-30">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        {/* Brand */}
+                        <div className="flex items-center gap-3">
+                            <div className="bg-gradient-to-br from-orange-500 to-violet-600 p-2 rounded-lg shadow-lg shadow-orange-900/20">
+                                <Coins size={20} className="text-white" strokeWidth={2.5} />
+                            </div>
+                            <span className="font-bold text-lg tracking-tight">Point System Admin</span>
+                        </div>
 
-                <nav className="flex-1 p-4 space-y-2">
-                    {navItems.map((item) => {
-                        const isActive = location.pathname === item.path;
-                        return (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${isActive
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
-                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                                    }`}
+                        {/* Actions */}
+                        <div className="flex items-center gap-4">
+                            <div className="h-6 w-px bg-stone-700/50 hidden md:block"></div>
+                            <button
+                                onClick={logout}
+                                className="flex items-center gap-2 group hover:text-rose-400 transition-colors"
                             >
-                                <item.icon size={20} className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-white transition-colors'} />
-                                <span className="font-medium">{item.label}</span>
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                <div className="p-4 border-t border-slate-800">
-                    <button
-                        onClick={logout}
-                        className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-                    >
-                        <LogOut size={20} />
-                        <span className="font-medium">Sign Out</span>
-                    </button>
+                                <span className="text-sm font-medium text-stone-300 group-hover:text-rose-300">Sign Out</span>
+                                <LogOut size={18} className="text-stone-400 group-hover:text-rose-400" />
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </aside>
+            </header>
 
             {/* Main Content */}
-            <main className="flex-1 ml-64 p-8 transition-all duration-300">
-                <div className="max-w-7xl mx-auto">
-                    <Outlet />
-                </div>
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <Outlet />
             </main>
         </div>
     );

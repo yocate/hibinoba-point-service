@@ -13,6 +13,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import com.journeyapps.barcodescanner.BarcodeEncoder
+import com.google.zxing.BarcodeFormat
+import android.widget.ImageView
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -27,6 +33,16 @@ class MainActivity : AppCompatActivity() {
     private var allUsers: List<User> = emptyList()
 
     private var currentUser: User? = null
+    
+    // QR Code Scanning
+    private var currentSendDialog: android.app.AlertDialog? = null
+    private var spinnerReceiver: Spinner? = null
+    
+    private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
+        if (result.contents != null) {
+            handleScanResult(result.contents)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +53,8 @@ class MainActivity : AppCompatActivity() {
         val token = sharedPref.getString("jwt_token", null)
 
         if (userId == null || token == null) {
+            // Clear invalid session
+            sharedPref.edit().clear().apply()
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
@@ -56,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         
         btnSend.setOnClickListener { showSendDialog() }
         btnLogout.setOnClickListener { logout() }
+        findViewById<android.widget.ImageButton>(R.id.btnReceiveQr).setOnClickListener { showReceiveQr() }
 
         fetchData()
     }
@@ -206,13 +225,15 @@ class MainActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_send_points, null)
         val spinner = dialogView.findViewById<Spinner>(R.id.spinnerReceiverDialog)
         val etAmt = dialogView.findViewById<EditText>(R.id.etAmountDialog)
+        val btnScan = dialogView.findViewById<android.widget.ImageButton>(R.id.btnScanQr)
+        
+        spinnerReceiver = spinner // Save reference
         
         lifecycleScope.launch {
             try {
                 // Populate spinner
-                // For MVP, we fetch all users
                 val users = NetworkClient.api.getUsers()
-                allUsers = users // Assign to class property
+                allUsers = users 
                 val currentUserId = currentUser?.id 
                 val receivers = users.filter { it.id != currentUserId }
                 
@@ -223,14 +244,12 @@ class MainActivity : AppCompatActivity() {
             } catch(e: Exception) {}
         }
 
-
-            
         val builder = android.app.AlertDialog.Builder(this)
-        // builder.setTitle("ポイントを送る") // Title removed, can use TextView if needed, but clean is better
         builder.setView(dialogView)
         
         val dialog = builder.create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        currentSendDialog = dialog // Save reference
 
         // Wire up custom buttons
         val btnCancel = dialogView.findViewById<Button>(R.id.btnCancelDialog)
@@ -246,8 +265,20 @@ class MainActivity : AppCompatActivity() {
                 performSend(receiver, amount)
                 dialog.dismiss()
             } else {
-                Toast.makeText(this, "入力が正しくありません", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "いくつおくるかきめてね", Toast.LENGTH_SHORT).show()
             }
+        }
+        
+        // Scan Button
+        btnScan.setOnClickListener {
+            // Launch Scanner
+            val options = ScanOptions()
+            options.setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+            options.setPrompt("あいてのQRコードを\nカメラにうつしてね")
+            options.setCameraId(0) 
+            options.setBeepEnabled(false)
+            options.setOrientationLocked(false)
+            scanLauncher.launch(options)
         }
         
         // Preset Logic
@@ -267,7 +298,65 @@ class MainActivity : AppCompatActivity() {
         btn1000.setOnClickListener { addAmount(1000) }
         btnClear.setOnClickListener { etAmt.text.clear() }
         
+        dialog.setOnDismissListener {
+            currentSendDialog = null
+            spinnerReceiver = null
+        }
+        
         dialog.show()
+    }
+
+    private fun showReceiveQr() {
+        val userId = currentUser?.id ?: return
+        
+        try {
+            val barcodeEncoder = BarcodeEncoder()
+            val bitmap = barcodeEncoder.encodeBitmap(userId, BarcodeFormat.QR_CODE, 600, 600)
+            
+            val dialogView = layoutInflater.inflate(R.layout.dialog_receive_qr, null)
+            val ivQr = dialogView.findViewById<ImageView>(R.id.ivQrCode)
+            val btnClose = dialogView.findViewById<Button>(R.id.btnCloseQr)
+            
+            ivQr.setImageBitmap(bitmap)
+            
+            val builder = android.app.AlertDialog.Builder(this)
+            builder.setView(dialogView)
+            val dialog = builder.create()
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            
+            btnClose.setOnClickListener { dialog.dismiss() }
+            
+            dialog.show()
+            
+        } catch (e: Exception) {
+            Toast.makeText(this, "QRコードがつくれなかったよ: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    @Suppress("UNCHECKED_CAST")
+    private fun handleScanResult(scannedId: String) {
+        val dialog = currentSendDialog
+        val spinner = spinnerReceiver
+        
+        if (dialog != null && dialog.isShowing && spinner != null) {
+            val adapter = spinner.adapter as? ArrayAdapter<User> ?: return
+            
+            var found = false
+            for (i in 0 until adapter.count) {
+                val user = adapter.getItem(i)
+                if (user?.id == scannedId) {
+                    spinner.setSelection(i)
+                    found = true
+                    Toast.makeText(this, "このひとにおくるよ: ${user.name}", Toast.LENGTH_SHORT).show()
+                    break
+                }
+            }
+            if (!found) {
+                Toast.makeText(this, "このアプリをつかっているひとじゃないみたい: $scannedId", Toast.LENGTH_LONG).show()
+            }
+        } else {
+             Toast.makeText(this, "よみとったよ: $scannedId", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun performSend(receiver: User, amount: Int) {

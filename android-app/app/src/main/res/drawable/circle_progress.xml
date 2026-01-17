@@ -15,8 +15,8 @@
                 android:thickness="12dp"
                 android:useLevel="true">
                 <gradient
-                    android:startColor="@color/orange_light"
-                    android:endColor="@color/orange_primary"
+                    android:startColor="#FCD34D"
+                    android:endColor="@color/coin_primary"
                     android:type="sweep"
                     android:useLevel="false" />
             </shape>

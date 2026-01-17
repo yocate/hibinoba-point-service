@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -9,22 +10,38 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="送る相手を選ぶ"
-        android:textColor="@color/text_grey"
+        android:text="だれにおくる？"
+        android:textColor="@color/text_secondary"
         android:layout_marginBottom="8dp"/>
 
-    <Spinner
-        android:id="@+id/spinnerReceiverDialog"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:layout_marginBottom="24dp"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="24dp">
+        
+        <Spinner
+            android:id="@+id/spinnerReceiverDialog"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"/>
+            
+        <ImageButton
+            android:id="@+id/btnScanQr"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_camera"
+            app:tint="@color/brand_primary"/>
+    </LinearLayout>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ポイント数"
-        android:textColor="@color/text_grey"
+        android:text="いくらおくる？"
+        android:textColor="@color/text_secondary"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="8dp"/>
 
@@ -37,11 +54,11 @@
         android:gravity="center"
         android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="@color/text_dark"
+        android:textColor="@color/text_primary"
         android:background="@android:color/transparent"
         android:layout_marginBottom="16dp"/>
         
-    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E0E0E0" android:layout_marginBottom="16dp"/>
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider" android:layout_marginBottom="16dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -56,6 +73,8 @@
             android:layout_height="wrap_content"
             android:text="+100"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:textColor="@color/brand_primary"
+            app:strokeColor="@color/brand_primary"
             android:layout_marginEnd="8dp"/>
 
         <Button
@@ -64,6 +83,8 @@
             android:layout_height="wrap_content"
             android:text="+500"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:textColor="@color/brand_primary"
+            app:strokeColor="@color/brand_primary"
             android:layout_marginEnd="8dp"/>
 
         <Button
@@ -71,15 +92,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="+1000"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:textColor="@color/brand_primary"
+            app:strokeColor="@color/brand_primary"/>
     </LinearLayout>
     
     <Button
         android:id="@+id/btnClearAmount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="クリア"
-        android:textColor="@color/red_stat"
+        android:text="ぜんぶけす"
+        android:textColor="@color/danger"
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_gravity="center"/>
 
@@ -95,8 +118,8 @@
             android:layout_width="0dp"
             android:layout_height="56dp"
             android:layout_weight="1"
-            android:text="キャンセル"
-            android:textColor="#757575"
+            android:text="やめる"
+            android:textColor="@color/text_secondary"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_marginEnd="8dp"/>
 
@@ -105,9 +128,9 @@
             android:layout_width="0dp"
             android:layout_height="56dp"
             android:layout_weight="1"
-            android:text="送る"
+            android:text="おくる"
             android:textColor="@android:color/white"
-            android:backgroundTint="#D50000"
+            android:backgroundTint="@color/coin_primary"
             android:textSize="16sp"
             android:textStyle="bold"/>
     </LinearLayout>

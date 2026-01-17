@@ -1,20 +1,30 @@
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="ic_launcher_background">#FFFFFF</color>
-    
-    <!-- Fitness UI Colors -->
-    <color name="orange_primary">#FF8F00</color>
-    <color name="orange_light">#FFB74D</color>
-    <color name="red_accent">#D50000</color>
-    <color name="bg_grey">#F5F5F5</color>
-    <color name="text_dark">#212121</color>
-    <color name="text_grey">#757575</color>
-    <color name="blue_stat">#1E88E5</color>
-    <color name="red_stat">#E53935</color>
+    <!-- Brand Colors (Orange - Warm & Friendly) -->
+    <color name="ic_launcher_background">#FFEDD5</color>
+    <color name="brand_primary">#EA580C</color> <!-- Orange-600 -->
+    <color name="brand_primary_dark">#C2410C</color> <!-- Orange-700 -->
+    <color name="brand_primary_light">#FFEDD5</color> <!-- Orange-100 -->
+
+    <!-- Coin/Point Colors (Amber) -->
+    <color name="coin_primary">#F59E0B</color>
+    <color name="coin_secondary">#D97706</color>
+
+    <!-- Semantic Colors -->
+    <color name="success">#10B981</color>
+    <color name="danger">#EF4444</color>
+
+    <!-- Base / Neutral (Warm Stone) -->
+    <color name="black">#1C1917</color> <!-- Stone-900 -->
+    <color name="white">#FFFFFF</color>
+    <color name="bg_main">#FFF7ED</color> <!-- Orange-50 -->
+    <color name="text_primary">#431407</color> <!-- Warm Brown/Black -->
+    <color name="text_secondary">#78716C</color> <!-- Stone-500 -->
+    <color name="divider">#FDBA74</color> <!-- Orange-300 (Subtle) -->
+
+    <!-- Legacy Compatibility (Map to new colors to prevent crash) -->
+    <color name="purple_200">#818CF8</color>
+    <color name="purple_500">#4F46E5</color>
+    <color name="purple_700">#3730A3</color>
+    <color name="teal_200">#F59E0B</color> <!-- Mapped to Amber -->
+    <color name="teal_700">#D97706</color>
 </resources>

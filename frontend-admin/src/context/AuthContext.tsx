@@ -17,13 +17,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
-        if (storedUser) {
+        const storedToken = localStorage.getItem('token');
+        if (storedUser && storedToken) {
             try {
                 setUser(JSON.parse(storedUser));
             } catch (e) {
                 console.error("Failed to parse stored user", e);
                 localStorage.removeItem('user');
+                localStorage.removeItem('token');
             }
+        } else {
+            // If either is missing, ensure clean state
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            setUser(null);
         }
         setIsLoading(false);
     }, []);

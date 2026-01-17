@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { UserApi, TransactionApi } from '../lib/api';
 import type { User } from '../types';
-import { Plus, Edit2, Trash2, CheckCircle, Search, Coins, Ban } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, Search, Coins, Users as UsersIcon } from 'lucide-react';
 import UserModal from '../components/UserModal';
 import GrantPointsModal from '../components/GrantPointsModal';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +19,7 @@ export default function UsersPage() {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [grantUser, setGrantUser] = useState<User | null>(null);
 
-    const [search, setSearch] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const [showDeleted, setShowDeleted] = useState(false);
 
     const fetchUsers = async () => {
@@ -83,8 +83,8 @@ export default function UsersPage() {
     };
 
     const filteredUsers = users.filter(u => {
-        const matchesSearch = u.name.toLowerCase().includes(search.toLowerCase()) ||
-            u.email.toLowerCase().includes(search.toLowerCase());
+        const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            u.email.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesDeleted = showDeleted ? true : u.is_active;
         return matchesSearch && matchesDeleted;
     });
@@ -105,101 +105,128 @@ export default function UsersPage() {
                 </button>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            {/* Dashboard Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div className="p-4 bg-indigo-50 text-indigo-600 rounded-xl">
+                        <UsersIcon size={28} />
+                    </div>
+                    <div>
+                        <div className="text-sm font-medium text-slate-500">Total Users</div>
+                        <div className="text-2xl font-bold text-slate-800">{users.length}</div>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div className="p-4 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <CheckCircle size={28} />
+                    </div>
+                    <div>
+                        <div className="text-sm font-medium text-stone-500">Active Users</div>
+                        <div className="text-2xl font-bold text-stone-800">{users.filter(u => u.is_active).length}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
                 {/* Toolbar */}
-                <div className="p-4 border-b border-slate-200 bg-slate-50 flex gap-4">
-                    <div className="relative flex-1 max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <div className="p-4 border-b border-stone-100 flex gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-stone-400 w-5 h-5" />
                         <input
                             type="text"
                             placeholder="Search users..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-stone-50 border-none rounded-lg focus:ring-2 focus:ring-orange-500/20 text-stone-900 placeholder-stone-400"
                         />
                     </div>
-
-                    <div className="flex items-center px-4 border-l border-slate-200">
-                        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
-                            <input
-                                type="checkbox"
-                                checked={showDeleted}
-                                onChange={(e) => setShowDeleted(e.target.checked)}
-                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                    {/* Toggle Switch */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setShowDeleted(!showDeleted)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${showDeleted ? 'bg-orange-600' : 'bg-stone-200'
+                                }`}
+                        >
+                            <span
+                                className={`${showDeleted ? 'translate-x-6' : 'translate-x-1'
+                                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                             />
-                            Show Deleted
-                        </label>
+                        </button>
+                        <span className="text-sm text-stone-600">Show Disabled</span>
                     </div>
                 </div>
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold">
+                    <table className="w-full">
+                        <thead className="bg-stone-50/50">
                             <tr>
-                                <th className="px-6 py-4">User</th>
-                                <th className="px-6 py-4">Role</th>
-                                <th className="px-6 py-4">Status</th>
-                                <th className="px-6 py-4 text-right">Balance</th>
-                                <th className="px-6 py-4 text-center">Actions</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">User</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">Role</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-stone-500 uppercase tracking-wider">Points</th>
+                                <th className="px-6 py-4 text-right text-xs font-semibold text-stone-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-stone-100">
                             {loading ? (
-                                <tr><td colSpan={5} className="p-8 text-center text-slate-400">Loading...</td></tr>
+                                <tr><td colSpan={5} className="p-12 text-center text-stone-400 animate-pulse">Loading users...</td></tr>
                             ) : filteredUsers.length === 0 ? (
-                                <tr><td colSpan={5} className="p-8 text-center text-slate-400">No users found.</td></tr>
+                                <tr><td colSpan={5} className="p-12 text-center text-stone-400 flex flex-col items-center gap-2">
+                                    <div className="p-4 bg-stone-50 rounded-full"><UsersIcon size={32} /></div>
+                                    <p>No users found matching your search.</p>
+                                </td></tr>
                             ) : (
                                 filteredUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
+                                    <tr key={user.id} className="group hover:bg-stone-50/50 transition-colors">
                                         <td className="px-6 py-4">
-                                            <div className="font-medium text-slate-900">{user.name}</div>
-                                            <div className="text-sm text-slate-500">{user.email}</div>
+                                            <div className="flex items-center">
+                                                {/* Avatar */}
+                                                <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-lg mr-3">
+                                                    {user.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <div className="font-medium text-stone-900">{user.name}</div>
+                                                    <div className="text-sm text-stone-500">{user.email}</div>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'admin'
+                                                ? 'bg-violet-100 text-violet-700'
+                                                : 'bg-stone-100 text-stone-700'
                                                 }`}>
                                                 {user.role || 'user'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {user.is_active ? (
-                                                <span className="inline-flex items-center gap-1 text-green-600 text-sm font-medium">
-                                                    <CheckCircle size={14} /> Active
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 text-slate-400 text-sm font-medium">
-                                                    <Ban size={14} /> Disabled
-                                                </span>
-                                            )}
+                                            <div className="flex items-center text-stone-900 font-medium">
+                                                <Coins className="w-4 h-4 text-amber-500 mr-2" />
+                                                {user.balance.toLocaleString()}
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4 text-right font-mono text-slate-700">
-                                            {user.balance.toLocaleString()} pts
-                                        </td>
-                                        <td className="px-6 py-4 flex justify-center gap-2">
+                                        <td className="px-6 py-4 text-right space-x-2">
                                             <button
                                                 onClick={() => handleOpenGrant(user)}
-                                                className="p-2 text-slate-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
+                                                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
                                                 title="Grant Points"
                                             >
-                                                <Coins size={18} />
+                                                <Coins className="w-4 h-4 mr-1.5" />
+                                                Grant
                                             </button>
                                             <button
                                                 onClick={() => handleEdit(user)}
-                                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                title="Edit"
+                                                className="p-2 text-stone-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                                title="Edit User"
                                             >
-                                                <Edit2 size={18} />
+                                                <Edit2 className="w-4 h-4" />
                                             </button>
-                                            {user.is_active && (
-                                                <button
-                                                    onClick={() => handleDelete(user)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            )}
+                                            <button
+                                                onClick={() => handleDelete(user)}
+                                                className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title={user.is_active === false ? "Restore User" : "Deactivate User"}
+                                            >
+                                                {user.is_active === false ? <CheckCircle className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+                                            </button>
                                         </td>
                                     </tr>
                                 ))

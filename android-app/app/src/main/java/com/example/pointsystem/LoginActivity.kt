@@ -18,7 +18,10 @@ class LoginActivity : AppCompatActivity() {
         // Check if already logged in
         val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         val userId = sharedPref.getString("user_id", null)
-        if (userId != null) {
+        val token = sharedPref.getString("jwt_token", null)
+        
+        if (userId != null && token != null) {
+            NetworkClient.authToken = token // Ensure token is set before navigation
             startMainActivity()
             return
         }
