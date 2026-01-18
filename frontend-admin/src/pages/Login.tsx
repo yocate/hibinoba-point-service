@@ -82,7 +82,7 @@ export default function LoginPage() {
                     </button>
 
                     <div className="text-center text-xs text-stone-400 mt-4">
-                        Internal Point System v1.0
+                        ひびのば ポイント v1.0
                     </div>
                 </form>
             </div>

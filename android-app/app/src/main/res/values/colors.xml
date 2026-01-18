@@ -4,6 +4,7 @@
     <color name="brand_primary">#EA580C</color> <!-- Orange-600 -->
     <color name="brand_primary_dark">#C2410C</color> <!-- Orange-700 -->
     <color name="brand_primary_light">#FFEDD5</color> <!-- Orange-100 -->
+    <color name="brand_secondary">#FED7AA</color> <!-- Orange-200 -->
 
     <!-- Coin/Point Colors (Amber) -->
     <color name="coin_primary">#F59E0B</color>

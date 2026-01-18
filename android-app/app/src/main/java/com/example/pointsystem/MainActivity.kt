@@ -44,23 +44,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private lateinit var ivCurrentUserAvatar: ImageView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
         // Session Check
-        val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val userId = sharedPref.getString("user_id", null)
-        val token = sharedPref.getString("jwt_token", null)
+        val (userId, token) = TokenManager.getSession(this)
 
         if (userId == null || token == null) {
-            // Clear invalid session
-            sharedPref.edit().clear().apply()
+            TokenManager.clearSession(this)
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
         }
         
-        // Initialize Token
         NetworkClient.authToken = token
 
         setContentView(R.layout.activity_main)
@@ -69,12 +67,29 @@ class MainActivity : AppCompatActivity() {
         tvReceived = findViewById(R.id.tvReceived)
         tvSent = findViewById(R.id.tvSent)
         tvCurrentUser = findViewById(R.id.tvCurrentUser)
+        ivCurrentUserAvatar = findViewById(R.id.ivCurrentUserAvatar)
         btnSend = findViewById(R.id.btnSend)
         btnLogout = findViewById(R.id.btnLogout)
         
         btnSend.setOnClickListener { showSendDialog() }
         btnLogout.setOnClickListener { logout() }
         findViewById<android.widget.ImageButton>(R.id.btnReceiveQr).setOnClickListener { showReceiveQr() }
+        
+        findViewById<android.widget.ImageButton>(R.id.btnRefresh).setOnClickListener {
+            // Animate rotation
+            it.animate().rotationBy(360f).setDuration(500).start()
+            fetchData() 
+            Toast.makeText(this, "更新しました", Toast.LENGTH_SHORT).show()
+        }
+
+        // Profile Navigation
+        ivCurrentUserAvatar.setOnClickListener {
+            currentUser?.let { user ->
+                val intent = Intent(this, ProfileActivity::class.java)
+                intent.putExtra("EXTRA_ID", user.id)
+                startActivity(intent)
+            }
+        }
 
         fetchData()
     }
@@ -85,34 +100,41 @@ class MainActivity : AppCompatActivity() {
     }
     
     fun logout() {
-        NetworkClient.authToken = null // Clear memory token
-         val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        with(sharedPref.edit()) {
-            clear()
-            apply()
-        }
+        NetworkClient.authToken = null 
+        TokenManager.clearSession(this)
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
     }
 
     private fun fetchData() {
-        val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val currentUserId = sharedPref.getString("user_id", "") ?: return
+        val (currentUserId, _) = TokenManager.getSession(this)
+        if (currentUserId == null) return
 
         lifecycleScope.launch {
             try {
-                // Fetch Users for current user info & spinner list
                 val users = NetworkClient.api.getUsers()
-                allUsers = users // Update class property for name resolution
+                allUsers = users 
                 currentUser = users.find { it.id == currentUserId }
                 
                 currentUser?.let {
                     val formatted = java.text.NumberFormat.getNumberInstance().format(it.balance)
                     tvBalance.text = formatted
                     tvCurrentUser.text = "${it.name}さん、こんにちは"
+                    
+                    // Set Avatar
+                    if (!it.avatarData.isNullOrEmpty()) {
+                        try {
+                            val decodedBytes = android.util.Base64.decode(it.avatarData, android.util.Base64.DEFAULT)
+                            val decodedBitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                             // Rounded? For now square/circleCrop
+                            ivCurrentUserAvatar.setImageBitmap(decodedBitmap)
+                        } catch (e: Exception) { e.printStackTrace() }
+                    } else {
+                        // Default placeholder capability if needed
+                        ivCurrentUserAvatar.setImageDrawable(null) // or resource
+                    }
                 }
 
-                // Fetch Transactions for Stats
                 val transactions = NetworkClient.api.getTransactions(currentUserId)
                 
                 var totalSent = 0
@@ -128,9 +150,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 
                 val fmt = java.text.NumberFormat.getNumberInstance()
-                tvReceived.text = fmt.format(totalReceived)
-                tvSent.text = fmt.format(totalSent)
-                
                 tvReceived.text = fmt.format(totalReceived)
                 tvSent.text = fmt.format(totalSent)
                 
@@ -156,64 +175,113 @@ class MainActivity : AppCompatActivity() {
             return
         }
         
-        // Show top 5
         val recent = transactions.take(5)
         
         recent.forEach { tx ->
             val row = android.widget.LinearLayout(this)
             row.orientation = android.widget.LinearLayout.HORIZONTAL
-            row.weightSum = 1f
+            row.gravity = android.view.Gravity.CENTER_VERTICAL
             row.setPadding(0, 16, 0, 16)
             
-            // Icon / Type
             val isReceived = tx.receiverId == currentUserId
-            val iconText = if (isReceived) "↓" else "↑"
-            val color = if (isReceived) "#00C853" else "#D50000" // Green/Red
-            
-            val tvIcon = TextView(this)
-            tvIcon.text = iconText
-            tvIcon.textSize = 18f
-            tvIcon.setTextColor(android.graphics.Color.parseColor(color))
-            tvIcon.layoutParams = android.widget.LinearLayout.LayoutParams(0, -2, 0.1f)
-            
-            // Details (Name)
-            // Resolve Name: We need allUsers list. 
-            // NOTE: allUsers is currently local var in fetchUsers, need to make it class property or pass it.
-            // Let's assume we have it or can find it. 
-            // Wait, fetchUsers makes allUsers local? No, line 95 `allUsers = users`. It is a class property?
-            // Checking previous code... line 29 `private var allUsers: List<User> = emptyList()`. Yes property.
-            
             val otherId = if (isReceived) tx.senderId else tx.receiverId
             
-            val otherName = if (otherId == null) {
-                "システム" // System
+            // Resolve User & Avatar
+            val otherUser = if (otherId != null) allUsers.find { it.id == otherId } else null
+            val otherAvatar = otherUser?.avatarData
+
+            // Resolve Name (Prioritize description if received, else User Name)
+            val otherName = if (isReceived && !tx.description.isNullOrEmpty()) {
+                tx.description
+            } else if (otherId == null) {
+                "システム"
             } else {
-                val otherUser = allUsers.find { it.id == otherId }
                 otherUser?.name ?: "Unknown"
             }
             
+            // Avatar
+            val ivHistoryAvatar = ImageView(this)
+            val params = android.widget.LinearLayout.LayoutParams(80, 80)
+            params.marginEnd = 24
+            ivHistoryAvatar.layoutParams = params
+            ivHistoryAvatar.scaleType = ImageView.ScaleType.CENTER_CROP
+            ivHistoryAvatar.setBackgroundColor(android.graphics.Color.parseColor("#EEEEEE")) // Placeholder
+            
+            if (!otherAvatar.isNullOrEmpty()) {
+                try {
+                    val decodedBytes = android.util.Base64.decode(otherAvatar, android.util.Base64.DEFAULT)
+                    val bmp = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                    ivHistoryAvatar.setImageBitmap(bmp)
+                } catch(e: Exception) {}
+            }
+            // Add icon overlay for direction? Or utilize text color.
+            // Simplified for now.
+
+            val textLayout = android.widget.LinearLayout(this)
+            textLayout.orientation = android.widget.LinearLayout.VERTICAL
+            textLayout.layoutParams = android.widget.LinearLayout.LayoutParams(0, -2, 1f)
+
+            // Name + Reason Row
+            val nameReasonRow = android.widget.LinearLayout(this)
+            nameReasonRow.orientation = android.widget.LinearLayout.HORIZONTAL
+            nameReasonRow.gravity = android.view.Gravity.CENTER_VERTICAL
+            
+            val density = resources.displayMetrics.density
+            val nameWidthPx = (140 * density).toInt()
+
             val tvName = TextView(this)
             tvName.text = otherName
             tvName.textSize = 16f
             tvName.setTextColor(android.graphics.Color.parseColor("#212121"))
-            tvName.layoutParams = android.widget.LinearLayout.LayoutParams(0, -2, 0.6f)
+            tvName.layoutParams = android.widget.LinearLayout.LayoutParams(nameWidthPx, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+            tvName.ellipsize = android.text.TextUtils.TruncateAt.END
+            tvName.setSingleLine()
+
+            nameReasonRow.addView(tvName)
+
+            // Reason (Description)
+            if (!tx.description.isNullOrEmpty()) {
+                val tvReason = TextView(this)
+                tvReason.text = tx.description
+                tvReason.textSize = 14f
+                tvReason.setTextColor(android.graphics.Color.parseColor("#5D4037")) // Brownish
+                tvReason.setPadding((8 * density).toInt(), 0, 0, 0)
+                nameReasonRow.addView(tvReason)
+            }
             
+            textLayout.addView(nameReasonRow)
+
+            val tvDate = TextView(this)
+            tvDate.text = try {
+                val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault())
+                val outputFormat = java.text.SimpleDateFormat("MM/dd HH:mm", java.util.Locale.getDefault())
+                val date = inputFormat.parse(tx.createdAt)
+                if (date != null) {
+                    outputFormat.format(date)
+                } else {
+                    tx.createdAt.take(10)
+                }
+            } catch (e: Exception) {
+                tx.createdAt.take(10)
+            }
+            tvDate.textSize = 12f
+            tvDate.setTextColor(android.graphics.Color.parseColor("#757575"))
+
+            textLayout.addView(tvDate)
+
             // Amount
             val tvAmount = TextView(this)
             tvAmount.text = "${if(isReceived) "+" else "-"}${java.text.NumberFormat.getNumberInstance().format(tx.amount)}"
-            tvAmount.textSize = 16f
+            tvAmount.textSize = 18f
             tvAmount.setTypeface(null, android.graphics.Typeface.BOLD)
-            tvAmount.setTextColor(android.graphics.Color.parseColor("#212121"))
-            tvAmount.gravity = android.view.Gravity.END
-            tvAmount.layoutParams = android.widget.LinearLayout.LayoutParams(0, -2, 0.3f)
-            
-            row.addView(tvIcon)
-            row.addView(tvName)
+            tvAmount.setTextColor(android.graphics.Color.parseColor(if(isReceived) "#00C853" else "#D50000"))
+
+            row.addView(ivHistoryAvatar)
+            row.addView(textLayout)
             row.addView(tvAmount)
             
             container.addView(row)
             
-            // Divider
             val divider = android.view.View(this)
             divider.layoutParams = android.widget.LinearLayout.LayoutParams(-1, 1)
             divider.setBackgroundColor(android.graphics.Color.parseColor("#EEEEEE"))
@@ -224,22 +292,58 @@ class MainActivity : AppCompatActivity() {
     private fun showSendDialog() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_send_points, null)
         val spinner = dialogView.findViewById<Spinner>(R.id.spinnerReceiverDialog)
+        val spinnerReason = dialogView.findViewById<Spinner>(R.id.spinnerReasonDialog)
         val etAmt = dialogView.findViewById<EditText>(R.id.etAmountDialog)
         val btnScan = dialogView.findViewById<android.widget.ImageButton>(R.id.btnScanQr)
         
         spinnerReceiver = spinner // Save reference
+
+        // TextWatcher for Comma Formatting
+        etAmt.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {}
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (s.isNullOrEmpty()) return
+                
+                etAmt.removeTextChangedListener(this)
+                try {
+                    val originalString = s.toString().replace(",", "")
+                    if (originalString.isNotEmpty()) {
+                        val longVal = originalString.toLong()
+                        val formatter = java.text.DecimalFormat("#,###")
+                        val formattedString = formatter.format(longVal)
+                        etAmt.setText(formattedString)
+                        etAmt.setSelection(etAmt.text.length)
+                    }
+                } catch (nfe: NumberFormatException) {
+                    nfe.printStackTrace()
+                }
+                etAmt.addTextChangedListener(this)
+            }
+        })
         
         lifecycleScope.launch {
             try {
-                // Populate spinner
+                // Populate users spinner
                 val users = NetworkClient.api.getUsers()
                 allUsers = users 
                 val currentUserId = currentUser?.id 
                 val receivers = users.filter { it.id != currentUserId }
                 
-                val adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_item, receivers)
+                val adapter = ArrayAdapter(this@MainActivity, R.layout.item_spinner, receivers)
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 spinner.adapter = adapter
+
+                // Populate reasons spinner
+                try {
+                    val reasons = NetworkClient.api.getReasons()
+                    val activeReasons = reasons.filter { true } // Filter inactive if needed, model has plain name
+                    val reasonAdapter = ArrayAdapter(this@MainActivity, R.layout.item_spinner, activeReasons)
+                    reasonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    spinnerReason.adapter = reasonAdapter
+                } catch(e: Exception) {
+                     // Fallback or empty
+                }
                 
             } catch(e: Exception) {}
         }
@@ -258,11 +362,14 @@ class MainActivity : AppCompatActivity() {
         btnCancel.setOnClickListener { dialog.dismiss() }
         btnSend.setOnClickListener {
             val receiver = spinner.selectedItem as? User
-            val amountStr = etAmt.text.toString()
+            val reasonItem = spinnerReason.selectedItem as? TransactionReason
+            
+            // Strip commas
+            val amountStr = etAmt.text.toString().replace(",", "")
             val amount = amountStr.toIntOrNull()
             
             if (receiver != null && amount != null && amount > 0) {
-                performSend(receiver, amount)
+                performSend(receiver, amount, reasonItem?.name)
                 dialog.dismiss()
             } else {
                 Toast.makeText(this, "いくつおくるかきめてね", Toast.LENGTH_SHORT).show()
@@ -273,11 +380,12 @@ class MainActivity : AppCompatActivity() {
         btnScan.setOnClickListener {
             // Launch Scanner
             val options = ScanOptions()
+            options.setCaptureActivity(CustomScannerActivity::class.java)
             options.setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-            options.setPrompt("あいてのQRコードを\nカメラにうつしてね")
+            options.setPrompt("") // Handled in layout
             options.setCameraId(0) 
             options.setBeepEnabled(false)
-            options.setOrientationLocked(false)
+            options.setOrientationLocked(true)
             scanLauncher.launch(options)
         }
         
@@ -288,8 +396,12 @@ class MainActivity : AppCompatActivity() {
         val btnClear = dialogView.findViewById<Button>(R.id.btnClearAmount)
         
         fun addAmount(add: Int) {
-            val current = etAmt.text.toString().toIntOrNull() ?: 0
-            etAmt.setText((current + add).toString())
+            val currentStr = etAmt.text.toString().replace(",", "")
+            val current = currentStr.toIntOrNull() ?: 0
+            val newVal = current + add
+            
+            val formatter = java.text.DecimalFormat("#,###")
+            etAmt.setText(formatter.format(newVal))
             etAmt.setSelection(etAmt.text.length) // Move cursor to end
         }
         
@@ -359,14 +471,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun performSend(receiver: User, amount: Int) {
+    private fun performSend(receiver: User, amount: Int, description: String?) {
          val currentUser = this.currentUser ?: return
          lifecycleScope.launch {
             try {
                 val req = TransactionRequest(
                     senderId = currentUser.id,
                     receiverId = receiver.id,
-                    amount = amount
+                    amount = amount,
+                    description = description
                 )
                 NetworkClient.api.sendPoints(req)
                 Toast.makeText(this@MainActivity, "送りました！", Toast.LENGTH_SHORT).show()

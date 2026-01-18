@@ -1,10 +1,11 @@
-import React from 'react';
-import { LogOut, Coins } from 'lucide-react';
-import { Outlet } from 'react-router-dom';
+import { LogOut, Coins, Users as UsersIcon, Settings as SettingsIcon, LayoutDashboard } from 'lucide-react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
     const { logout } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
 
     return (
         <div className="min-h-screen bg-stone-50">
@@ -13,11 +14,47 @@ export default function Layout() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         {/* Brand */}
-                        <div className="flex items-center gap-3">
-                            <div className="bg-gradient-to-br from-orange-500 to-violet-600 p-2 rounded-lg shadow-lg shadow-orange-900/20">
-                                <Coins size={20} className="text-white" strokeWidth={2.5} />
+                        <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-gradient-to-br from-orange-500 to-violet-600 p-2 rounded-lg shadow-lg shadow-orange-900/20">
+                                    <Coins size={20} className="text-white" strokeWidth={2.5} />
+                                </div>
+                                <span className="font-bold text-lg tracking-tight">ひびのば ポイント 管理画面</span>
                             </div>
-                            <span className="font-bold text-lg tracking-tight">Point System Admin</span>
+
+                            {/* Nav Links */}
+                            <nav className="flex items-center gap-1">
+                                <button
+                                    onClick={() => navigate('/dashboard')}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/dashboard'
+                                        ? 'bg-stone-800 text-white'
+                                        : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                                        }`}
+                                >
+                                    <LayoutDashboard size={16} />
+                                    Dashboard
+                                </button>
+                                <button
+                                    onClick={() => navigate('/users')}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/users'
+                                        ? 'bg-stone-800 text-white'
+                                        : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                                        }`}
+                                >
+                                    <UsersIcon size={16} />
+                                    Users
+                                </button>
+                                <button
+                                    onClick={() => navigate('/settings')}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/settings'
+                                        ? 'bg-stone-800 text-white'
+                                        : 'text-stone-400 hover:text-white hover:bg-stone-800'
+                                        }`}
+                                >
+                                    <SettingsIcon size={16} />
+                                    Settings
+                                </button>
+                            </nav>
                         </div>
 
                         {/* Actions */}

@@ -1,9 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
     <domain-config cleartextTrafficPermitted="true">
-        <!-- Allow cleartext/http ONLY for local development -->
-        <!-- In Production, this entire file should be removed or cleartextTrafficPermitted set to false -->
-        <domain includeSubdomains="true">10.0.2.2</domain>
-        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">192.168.128.143</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain> <!-- Emulator -->
     </domain-config>
 </network-security-config>

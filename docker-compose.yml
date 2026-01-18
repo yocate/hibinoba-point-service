@@ -25,6 +25,7 @@ services:
       DB_PASSWORD: password
       DB_NAME: point_system
       DB_PORT: 5432
+      POS_API_KEY: secret-pos-key-123
     depends_on:
       - db
 

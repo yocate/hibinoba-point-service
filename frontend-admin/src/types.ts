@@ -5,7 +5,8 @@ export interface User {
     role: string;
     created_at: string;
     balance: number;
-    is_active: boolean; // Added
+    is_active: boolean;
+    avatar_data?: string;
 }
 
 export interface Transaction {

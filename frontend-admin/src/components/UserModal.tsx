@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { User } from '../types';
-import { X, Save } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface UserModalProps {
     isOpen: boolean;
@@ -16,6 +16,7 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
         role: 'user',
         password: '',
         is_active: true,
+        avatar_data: '',
     });
     const [loading, setLoading] = useState(false);
 
@@ -25,8 +26,9 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                password: '', // Don't fill password
+                password: '',
                 is_active: user.is_active,
+                avatar_data: user.avatar_data || '',
             });
         } else {
             setFormData({
@@ -35,11 +37,26 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
                 role: 'user',
                 password: '',
                 is_active: true,
+                avatar_data: '',
             });
         }
     }, [user, isOpen]);
 
     if (!isOpen) return null;
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                // Strip data:image/...;base64, prefix for backend
+                const base64Data = result.split(',')[1];
+                setFormData(prev => ({ ...prev, avatar_data: base64Data }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,7 +74,7 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl relative">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl relative max-h-[90vh] overflow-y-auto">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-50 rounded-lg transition-colors"
@@ -70,6 +87,32 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Avatar Upload */}
+                    <div className="flex flex-col items-center mb-4">
+                        <div className="w-24 h-24 rounded-full bg-stone-100 mb-3 overflow-hidden border-2 border-stone-200">
+                            {formData.avatar_data ? (
+                                <img
+                                    src={`data:image/jpeg;base64,${formData.avatar_data}`}
+                                    alt="Preview"
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-stone-400 text-3xl font-bold">
+                                    {(formData.name || 'U').charAt(0)}
+                                </div>
+                            )}
+                        </div>
+                        <label className="cursor-pointer px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg text-sm font-medium transition-colors">
+                            プロフィール写真の編集
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleImageChange}
+                            />
+                        </label>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-stone-700 mb-1">
                             Name
@@ -154,9 +197,10 @@ export default function UserModal({ isOpen, onClose, onSubmit, user }: UserModal
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl font-medium transition-colors"
+                            disabled={loading}
+                            className="flex-1 px-4 py-2 bg-stone-900 text-white hover:bg-stone-800 rounded-xl font-medium transition-colors disabled:opacity-50"
                         >
-                            {user ? 'Save Changes' : 'Create User'}
+                            {loading ? 'Saving...' : (user ? 'Save Changes' : 'Create User')}
                         </button>
                     </div>
                 </form>

@@ -54,9 +54,9 @@ export default function UsersPage() {
         setIsGrantModalOpen(true);
     };
 
-    const handleGrantPoints = async (userId: string, amount: number) => {
-        await TransactionApi.issue(userId, amount, currentUser?.id);
-        alert(`Successfully granted ${amount} points`);
+    const handleGrantPoints = async (userId: string, amount: number, description: string) => {
+        await TransactionApi.issue(userId, amount, description, currentUser?.id);
+        alert(`Successfully granted ${amount} points for: ${description}`);
         fetchUsers(); // Refresh to show new balance
     };
 
@@ -181,8 +181,16 @@ export default function UsersPage() {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
                                                 {/* Avatar */}
-                                                <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-lg mr-3">
-                                                    {user.name.charAt(0)}
+                                                <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-lg mr-3 overflow-hidden">
+                                                    {user.avatar_data ? (
+                                                        <img
+                                                            src={`data:image/jpeg;base64,${user.avatar_data}`}
+                                                            alt={user.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        user.name.charAt(0)
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <div className="font-medium text-stone-900">{user.name}</div>

@@ -13,6 +13,9 @@ interface ApiService {
     @GET("users")
     suspend fun getUsers(): List<User>
 
+    @GET("users/{id}")
+    suspend fun getUser(@retrofit2.http.Path("id") id: String): Response<User>
+
     @POST("transactions/transfer")
     suspend fun sendPoints(@Body request: TransactionRequest): Response<TransactionResponse>
 
@@ -23,14 +26,17 @@ interface ApiService {
     suspend fun getTransactions(@retrofit2.http.Query("user_id") userId: String): List<Transaction>
     @POST("login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    @GET("reasons")
+    suspend fun getReasons(): List<TransactionReason>
 }
 
 data class LoginRequest(val email: String, val password: String)
 data class LoginResponse(val token: String, val user: User)
 
 object NetworkClient {
-    // 10.0.2.2 is the localhost of the host machine from Android Emulator
-    private const val BASE_URL = "http://10.0.2.2:8080/api/"
+    // Updated for physical device access (was 10.0.2.2)
+    private const val BASE_URL = "http://192.168.128.143:8080/api/"
 
     var authToken: String? = null
 

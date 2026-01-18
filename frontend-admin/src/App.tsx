@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import UsersPage from './pages/Users';
+import DashboardPage from './pages/Dashboard';
+import SettingsPage from './pages/Settings';
 import LoginPage from './pages/Login';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -60,8 +62,10 @@ function App() {
                 <Layout />
               </RequireAuth>
             }>
-              <Route index element={<Navigate to="/users" replace />} />
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardPage />} />
               <Route path="users" element={<UsersPage />} />
+              <Route path="settings" element={<SettingsPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

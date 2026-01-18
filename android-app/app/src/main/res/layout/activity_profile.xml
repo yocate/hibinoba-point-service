@@ -12,7 +12,26 @@
         android:text="Edit Profile"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginBottom="32dp"/>
+        android:layout_marginBottom="24dp"/>
+
+    <ImageView
+        android:id="@+id/ivAvatar"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center_horizontal"
+        android:background="#E0E0E0" 
+        android:scaleType="centerCrop"
+        android:layout_marginBottom="8dp"/>
+
+    <Button
+        android:id="@+id/btnChangePhoto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="プロフィール写真の編集"
+        android:layout_marginBottom="24dp"
+        android:backgroundTint="@color/brand_secondary"
+        android:textColor="@color/brand_primary"/>
 
     <EditText
         android:id="@+id/etName"

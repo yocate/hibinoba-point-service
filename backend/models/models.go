@@ -15,6 +15,7 @@ type User struct {
 	Balance      int64     `json:"balance"`
 	PasswordHash string    `json:"-"` // Never return password in JSON
 	IsActive     bool      `json:"is_active"`
+	AvatarData   string    `json:"avatar_data"` // Base64 encoded image
 }
 
 type Wallet struct {
@@ -24,10 +25,18 @@ type Wallet struct {
 }
 
 type Transaction struct {
-	ID         uuid.UUID  `json:"id"`
-	SenderID   *uuid.UUID `json:"sender_id"`
-	ReceiverID uuid.UUID  `json:"receiver_id"`
-	Amount     int        `json:"amount"`
-	Type       string     `json:"type"`
-	CreatedAt  time.Time  `json:"created_at"`
+	ID          uuid.UUID  `json:"id"`
+	SenderID    *uuid.UUID `json:"sender_id"`
+	ReceiverID  uuid.UUID  `json:"receiver_id"`
+	Amount      int        `json:"amount"`
+	Type        string     `json:"type"`
+	Description string     `json:"description"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
+type TransactionReason struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
 }

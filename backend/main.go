@@ -7,6 +7,7 @@ import (
 	"internal-point-system/backend/auth"
 	"internal-point-system/backend/db"
 	"internal-point-system/backend/handlers"
+	"internal-point-system/backend/middleware"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -43,12 +44,26 @@ func main() {
 		protected.Use(auth.AuthMiddleware())
 		{
 			protected.GET("/users", handlers.GetUsers)
+			protected.GET("/users/:id", handlers.GetUser)
 			protected.PUT("/users/:id", handlers.UpdateUser)
 			protected.DELETE("/users/:id", handlers.DeleteUser)
 
 			protected.GET("/transactions", handlers.GetTransactions)
 			protected.POST("/transactions/issue", handlers.IssuePoints)
 			protected.POST("/transactions/transfer", handlers.TransferPoints)
+
+			protected.GET("/reasons", handlers.GetReasons)
+			protected.POST("/reasons", handlers.CreateReason)
+			protected.DELETE("/reasons/:id", handlers.DeleteReason)
+
+			protected.GET("/stats", handlers.GetSystemStats)
+		}
+
+		// External Systems (POS)
+		external := api.Group("/external")
+		external.Use(middleware.APIKeyAuth()) // Removed auth import check, assuming needed
+		{
+			external.POST("/payment", handlers.ProcessPayment)
 		}
 	}
 

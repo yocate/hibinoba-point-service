@@ -16,9 +16,7 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         
         // Check if already logged in
-        val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val userId = sharedPref.getString("user_id", null)
-        val token = sharedPref.getString("jwt_token", null)
+        val (userId, token) = TokenManager.getSession(this)
         
         if (userId != null && token != null) {
             NetworkClient.authToken = token // Ensure token is set before navigation
@@ -59,13 +57,7 @@ class LoginActivity : AppCompatActivity() {
                     val token = loginResponse.token
 
                     // Save session
-                    val sharedPref = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-                    with(sharedPref.edit()) {
-                        putString("user_id", user.id)
-                        putString("user_name", user.name)
-                        putString("jwt_token", token)
-                        apply()
-                    }
+                    TokenManager.saveSession(this@LoginActivity, user.id, token)
                     
                     // Set global token
                     NetworkClient.authToken = token

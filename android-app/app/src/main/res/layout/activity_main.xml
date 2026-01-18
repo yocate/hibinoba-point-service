@@ -45,6 +45,14 @@
                         android:padding="24dp"
                         android:gravity="center">
 
+                        <ImageView
+                            android:id="@+id/ivCurrentUserAvatar"
+                            android:layout_width="80dp"
+                            android:layout_height="80dp"
+                            android:layout_marginBottom="12dp"
+                            android:background="#f5f5f4"
+                            android:scaleType="centerCrop"/>
+                            
                         <TextView
                             android:id="@+id/tvCurrentUser"
                             android:layout_width="wrap_content"
@@ -144,8 +152,20 @@
                     android:layout_marginEnd="72dp"
                     android:src="@android:drawable/ic_menu_share"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="@color/brand_primary_light"
+                    app:tint="@color/white"
                     android:contentDescription="Show QR Code"/>
+
+                 <ImageButton
+                    android:id="@+id/btnRefresh"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="128dp"
+                    android:src="@android:drawable/ic_popup_sync"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    app:tint="@color/white"
+                    android:contentDescription="Refresh Data"/>
 
                  <ImageButton
                     android:id="@+id/btnLogout"
@@ -156,7 +176,7 @@
                     android:layout_marginEnd="16dp"
                     android:src="@android:drawable/ic_lock_power_off"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    app:tint="@color/brand_primary_light"/>
+                    app:tint="@color/white"/>
             </FrameLayout>
 
             <!-- History Section -->

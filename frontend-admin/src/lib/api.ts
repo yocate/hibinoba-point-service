@@ -62,8 +62,29 @@ export const UserApi = {
 };
 
 export const TransactionApi = {
-    issue: async (receiverId: string, amount: number, senderId?: string) => {
-        const res = await api.post('/transactions/issue', { receiver_id: receiverId, amount, sender_id: senderId });
+    issue: async (receiverId: string, amount: number, description: string, senderId?: string) => {
+        const res = await api.post('/transactions/issue', { receiver_id: receiverId, amount, description, sender_id: senderId });
         return res.data;
+    }
+};
+
+export interface TransactionReason {
+    id: string;
+    name: string;
+    is_active: boolean;
+    created_at: string;
+}
+
+export const ReasonApi = {
+    getAll: async () => {
+        const res = await api.get<TransactionReason[]>('/reasons');
+        return res.data;
+    },
+    create: async (name: string) => {
+        const res = await api.post<TransactionReason>('/reasons', { name });
+        return res.data;
+    },
+    delete: async (id: string) => {
+        await api.delete(`/reasons/${id}`);
     }
 };
